@@ -66,7 +66,7 @@ architecture behavioiral of tb_hitmap is
         case counter is
           when 0 => reset <= '1';
           when 1 => reset <= '0';
-          when 2 to 17 =>
+          when 2 to 16 =>
             bs <= bitstream(counter-2);
             hc <= hit_count(counter-2);
           when others => null;

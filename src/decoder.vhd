@@ -23,7 +23,7 @@ architecture behavioiral of HitMapDecoder is
   signal layer1_next_is_last : std_logic;
 
   signal layer2_map : std_logic_vector(10 downto 0) := (others => '0');
-  signal layer2_enable : std_logic_vector(4 downto 0);
+  signal layer2_enable : std_logic_vector(4 downto 1);
   signal layer2_next_is_last : std_logic_vector(4 downto 1);
 
   signal enable : std_logic;
@@ -41,7 +41,7 @@ begin  -- architecture behavioiral
 --    layer2_enable(2) <= not layer2_enable(1);
 --    layer2_enable(3) <= layer2_enable(2) and not 
 
-  layer2_enable(0) <= or_reduce(layer1_map); -- is there anything valid? 
+--  layer2_enable(0) <= or_reduce(layer1_map); -- is there anything valid? 
   decoders_layer2: for iBit in 1 to 5-1 generate
 
     --propogate the count left to decode?
@@ -53,10 +53,10 @@ begin  -- architecture behavioiral
       elsif iBit = 2 then
         layer2_enable(iBit) <= not layer1_next_is_last; 
       else
-        if ( (layer2_enable(iBit-1) = '1' and bitstream(iBit-1) = '0') or --previous decoder enabled, but is length 0
-             (layer2_enable(iBit-1) = '0' and layer2_enable(iBit-2) = '1') --previous decoder wasn't enabled
+        if ( (layer2_enable(iBit-1 downto iBit-2) = "01" and bitstream(iBit-1)     = '0' ) or --previous decoder enabled, but is length 0
+             (layer2_enable(iBit-1) = '0' and layer2_enable(iBit-2) = '1' ) --previous decoder wasn't enabled
              ) then
-          if layer1_map = "11" then
+          if layer1_map = "11"  then
             layer2_enable(iBit) <= '1';
           else
             layer2_enable(iBit) <= '0';
