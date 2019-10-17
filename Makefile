@@ -68,7 +68,7 @@ sim/vhdl/%.vdb : src/%.vhd
 
 #TB_MISC_VDBS=$(call build_vdb_list, src/misc/types.vhd )
 
-TB_HITMAP_VDBS=$(TB_MISC_VDBS) $(call build_vdb_list,  src/sub_layer.vhd src/decoder.vhd)    
+TB_HITMAP_VDBS=$(TB_MISC_VDBS) $(call build_vdb_list, src/types.vhd src/sub_layer.vhd src/decoder.vhd)    
 tb_hitmap : $(TB_HITMAP_VDBS)  
 	$(TB_RULE)     
 

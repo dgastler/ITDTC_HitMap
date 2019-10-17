@@ -1,6 +1,7 @@
 library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_misc.all;
+use work.types.all;
 
 entity HitMapDecoder is
   port (
@@ -11,69 +12,49 @@ end entity HitMapDecoder;
 
 architecture behavioiral of HitMapDecoder is
 
-  component sublayer is
-    port (
-      enable               : in  std_logic;
-      bitstream            : in  std_logic_vector(1 downto 0);
-      next_pos_is_last_bit : out std_logic;
-      hit_count            : out std_logic_vector(1 downto 0));
-  end component sublayer;
-
-  signal layer1_map : std_logic_vector(1 downto 0);
-  signal layer1_next_is_last : std_logic;
-
-  signal layer2_map : std_logic_vector(10 downto 0) := (others => '0');
-  signal layer2_enable : std_logic_vector(4 downto 1);
-  signal layer2_next_is_last : std_logic_vector(4 downto 1);
-
-  signal enable : std_logic;
+  signal bs_map              : slv2_array_t(0 to bitstream'length -1);
+  signal bs_is_short_message : std_logic_vector(0 to bitstream'length-1);
+  signal bs_enable           : std_logic_vector(0 to bitstream'length-1);
+  
 begin  -- architecture behavioiral
 
-  enable <= not reset;
-  primary: entity work.sublayer
-    port map (
-      enable               => enable,
-      bitstream            => bitstream(1 downto 0),
-      next_pos_is_last_bit => layer1_next_is_last,
-      hit_count            => layer1_map(1 downto 0));
+  decoders: for iBit in 0 to bitstream'length - 2 generate
 
---    layer2_enable(1) <= not next_pos_is_last_bit;
---    layer2_enable(2) <= not layer2_enable(1);
---    layer2_enable(3) <= layer2_enable(2) and not 
-
---  layer2_enable(0) <= or_reduce(layer1_map); -- is there anything valid? 
-  decoders_layer2: for iBit in 1 to 5-1 generate
-
-    --propogate the count left to decode?
-    
-    sublayer_en: process (layer1_next_is_last,layer1_map,layer2_enable,bitstream) is
-    begin  -- process sublayer_en
-      if iBit = 1 then
-        layer2_enable(iBit) <= layer1_next_is_last;
-      elsif iBit = 2 then
-        layer2_enable(iBit) <= not layer1_next_is_last; 
-      else
-        if ( (layer2_enable(iBit-1 downto iBit-2) = "01" and bitstream(iBit-1)     = '0' ) or --previous decoder enabled, but is length 0
-             (layer2_enable(iBit-1) = '0' and layer2_enable(iBit-2) = '1' ) --previous decoder wasn't enabled
-             ) then
-          if layer1_map = "11"  then
-            layer2_enable(iBit) <= '1';
-          else
-            layer2_enable(iBit) <= '0';
-          end if;          
-        else
-          layer2_enable(iBit) <= '0';
+    bs_enable_proc: process (bs_enable,bitstream) is
+    begin  -- process bs_enable_proc
+      bs_enable(iBit) <= '0';
+      if iBit = 0 then
+        bs_enable(iBit) <= not reset;
+      elsif iBit = 1 then
+        if bs_enable(iBit-1) = '0' then
+          bs_enable(iBit) <= '1';
+        elsif bs_is_short_message(iBit-1) = '1' then
+          bs_enable(iBit) <= '1';
         end if;
-      end if;
-    end process sublayer_en;
+      else
+        if bs_enable(iBit-2) = '1' then
+          
+        end if;
+        if bs_enable(iBit-1) = '1' then
+          
+        end if;
 
-    sublayer_1: entity work.sublayer
+      end if;
+    end process bs_enable_proc;
+    
+    sub_layer_1: entity work.sublayer
       port map (
         enable               => layer2_enable(iBit),
         bitstream            => bitstream(iBit+1 downto iBit),
         next_pos_is_last_bit => layer2_next_is_last(iBit),
-        hit_count            => layer2_map((2*iBit) +1 downto (2*iBit)));
-  end generate decoders_layer2;  
+        hit_count            => layer2_map(iBit));
+    sub_layer_ctrl_1: entity work.sub_layer_ctrl
+      port map (
+        enable    => layer2_enable(iBit),
+        layer_in  => layer2_layer_in,
+        layer_out => layer2_layer_out);
+  end generate decoders;  
+  
   
 end architecture behavioiral;
 
